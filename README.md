@@ -12,7 +12,7 @@ Este repositorio contiene **workflows reutilizables de GitHub Actions** diseñad
 ```yaml
 jobs:
   codeql:
-    uses: gapalmasss/github-actions-templates/.github/workflows/codeql-analysis.yml@main
+    uses: gapalmas/github-actions-templates/.github/workflows/codeql-analysis.yml@main
     with:
       language: 'python'
 ```
@@ -22,7 +22,7 @@ jobs:
 ```yaml
 jobs:
   trivy:
-    uses: gapalmasss/github-actions-templates/.github/workflows/trivy-scan.yml@main
+    uses: gapalmas/github-actions-templates/.github/workflows/trivy-scan.yml@main
     with:
       image-name: 'gapalmasss/html_to_pdf'
       image-tag: '${{ github.sha }}'
