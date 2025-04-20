@@ -8,7 +8,7 @@ Este repositorio contiene **workflows reutilizables de GitHub Actions** diseñad
 ## ✅ Uso de workflows reutilizables
 
 ### 🔐 CodeQL Analysis examples
-
+### Cómo usarlo
 ```yaml
 jobs:
   codeql:
@@ -17,8 +17,8 @@ jobs:
       language: 'python'
 ```
 
-### 🐳 Trivy Docker Scan examples
-
+### 🐳 Trivy Docker container Scan examples
+### Cómo usarlo
 ```yaml
 jobs:
   trivy:
@@ -29,6 +29,28 @@ jobs:
       severity: 'CRITICAL,HIGH'
       output-format: 'sarif'
 ```
+
+## ✅ YAML Lint (Reusable Workflow)
+
+Este workflow permite validar todos los archivos YAML del repositorio que lo consuma, usando [`yamllint`](https://github.com/adrienverge/yamllint).
+
+### Cómo usarlo
+
+```yaml
+
+name: YAML Syntax Validation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    uses: gapalmas/github-actions-templates/.github/workflows/validate-yaml.yml@main
+```
+
 
 ## 🧩 Licencia
 
