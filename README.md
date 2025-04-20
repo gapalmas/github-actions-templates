@@ -1,4 +1,4 @@
-# ♻️ GitHub Actions Reusables - Seguridad de Código y Contenedores
+# ♻️ GitHub Actions Templates - Seguridad de Código y Contenedores
 
 Este repositorio contiene **workflows reutilizables de GitHub Actions** diseñados para escaneo de vulnerabilidades y análisis de seguridad:
 
