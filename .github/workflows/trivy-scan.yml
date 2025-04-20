@@ -1,4 +1,4 @@
-name: Reusable Trivy Docker Image Scan
+name: Trivy Docker Image Scan
 
 on:
   workflow_call:
