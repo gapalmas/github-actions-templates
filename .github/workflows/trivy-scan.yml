@@ -1,5 +1,4 @@
 name: Trivy Docker Image Scan
-
 on:
   workflow_call:
     inputs:
@@ -21,41 +20,33 @@ on:
         default: "sarif"
         required: false
         type: string
-
 permissions:
   contents: read
   security-events: write
-
 jobs:
   trivy-scan:
     name: Scan Docker Image with Trivy
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
+        uses: docker/setup-buildx-action@v3
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
       - name: Pull Docker image
         run: docker pull ${{ inputs.image-name }}:${{ inputs.image-tag }}
-
       - name: Run Trivy vulnerability scanner (SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.17.0
         with:
           image-ref: '${{ inputs.image-name }}:${{ inputs.image-tag }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: ${{ inputs.severity }}
           exit-code: 0
-
       - name: Run Trivy vulnerability scanner (JSON)
         if: ${{ inputs.output-format == 'json' || inputs.output-format == 'table' }}
         run: |
@@ -63,16 +54,14 @@ jobs:
             --output trivy-results.json \
             --severity ${{ inputs.severity }} \
             ${{ inputs.image-name }}:${{ inputs.image-tag }}
-
       - name: Upload Trivy SARIF results to GitHub Security tab
         if: ${{ inputs.output-format == 'sarif' }}
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
-
       - name: Upload Trivy JSON artifact
         if: ${{ inputs.output-format == 'json' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report-json
           path: trivy-results.json
