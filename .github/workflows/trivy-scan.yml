@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   trivy-scan:
-    name: Scan Docker Image with Trivy
+    name: Scan Docker Image, Secrets, and IaC with Trivy
     runs-on: ubuntu-latest
 
     steps:
@@ -52,50 +52,57 @@ jobs:
       - name: Pull Docker image
         run: docker pull ${{ inputs.image-name }}:${{ inputs.image-tag }}
 
-      - name: Install Trivy CLI
+      - name: Install Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Run Trivy vulnerability scanner (SARIF)
+      - name: Run Trivy Image Scan (SARIF)
         if: ${{ inputs.output-format == 'sarif' }}
-        uses: aquasecurity/trivy-action@0.17.0
-        with:
-          image-ref: '${{ inputs.image-name }}:${{ inputs.image-tag }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: ${{ inputs.severity }}
-          exit-code: 0
+        run: |
+          trivy image --format template \
+            --template "@/contrib/sarif.tpl" \
+            --output trivy-results.sarif \
+            --severity ${{ inputs.severity }} \
+            ${{ inputs.image-name }}:${{ inputs.image-tag }}
 
-      - name: Run Trivy vulnerability scanner (JSON or TABLE)
+      - name: Run Trivy Image Scan (JSON/TABLE)
         if: ${{ inputs.output-format != 'sarif' }}
         run: |
-          trivy image ${{ inputs.image-name }}:${{ inputs.image-tag }} \
-            --format ${{ inputs.output-format }} \
+          trivy image --format ${{ inputs.output-format }} \
             --output trivy-results.${{ inputs.output-format }} \
             --severity ${{ inputs.severity }} \
-            --dependency-tree
+            --dependency-tree \
+            ${{ inputs.image-name }}:${{ inputs.image-tag }}
 
-      - name: Upload Trivy SARIF results to GitHub Security tab
+      - name: Upload SARIF to GitHub Security tab
         if: ${{ inputs.output-format == 'sarif' }}
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: trivy-results.sarif
 
-      - name: Upload Trivy JSON/TABLE artifact
+      - name: Upload Trivy Report Artifact
         if: ${{ inputs.output-format != 'sarif' }}
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report-${{ inputs.output-format }}
+          name: trivy-report
           path: trivy-results.${{ inputs.output-format }}
 
-      - name: Generate SBOM (CycloneDX)
+      - name: Trivy Secret Scanning
         run: |
-          trivy image ${{ inputs.image-name }}:${{ inputs.image-tag }} \
-            --format cyclonedx \
-            --output sbom.cyclonedx.json
+          trivy fs --scanners secret --severity ${{ inputs.severity }} . > trivy-secrets.txt
 
-      - name: Upload SBOM artifact
+      - name: Upload Secrets Scan Results
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-cyclonedx
-          path: sbom.cyclonedx.json
+          name: trivy-secrets
+          path: trivy-secrets.txt
+
+      - name: Trivy IaC Misconfiguration Scan
+        run: |
+          trivy config --severity ${{ inputs.severity }} . > trivy-iac.txt
+
+      - name: Upload IaC Scan Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-iac
+          path: trivy-iac.txt
