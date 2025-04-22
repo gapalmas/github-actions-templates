@@ -17,18 +17,19 @@ on:
         required: false
         type: string
       output-format:
-        description: "Formato de salida de Trivy"
+        description: "Formato de salida de Trivy (sarif, json, table)"
         default: "sarif"
         required: false
         type: string
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   trivy-scan:
     name: Scan Docker Image with Trivy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
 
     steps:
       - name: Checkout repository
@@ -44,11 +45,10 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Pull Docker image
-        run: |
-          docker pull ${{ inputs.image-name }}:${{ inputs.image-tag }}
+        run: docker pull ${{ inputs.image-name }}:${{ inputs.image-tag }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: '${{ inputs.image-name }}:${{ inputs.image-tag }}'
           format: ${{ inputs.output-format }}
@@ -56,15 +56,15 @@ jobs:
           severity: ${{ inputs.severity }}
           exit-code: 0
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload Trivy SARIF results to GitHub Security tab
         if: ${{ inputs.output-format == 'sarif' }}
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Save Trivy JSON report as artifact (opcional)
-        if: ${{ inputs.output-format == 'json' || inputs.output-format == 'table' }}
-        uses: actions/upload-artifact@v2
+      - name: Upload Trivy results as artifact
+        if: ${{ inputs.output-format != 'sarif' }}
+        uses: actions/upload-artifact@v3
         with:
           name: trivy-results
           path: trivy-results.${{ inputs.output-format }}
