@@ -64,7 +64,7 @@ jobs:
 
       - name: Save Trivy JSON report as artifact (opcional)
         if: ${{ inputs.output-format == 'json' || inputs.output-format == 'table' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: trivy-results
           path: trivy-results.${{ inputs.output-format }}
