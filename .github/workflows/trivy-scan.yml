@@ -35,6 +35,7 @@ jobs:
   trivy-scan:
     name: Scan Docker Image with Trivy
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,6 +52,10 @@ jobs:
       - name: Pull Docker image
         run: docker pull ${{ inputs.image-name }}:${{ inputs.image-tag }}
 
+      - name: Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run Trivy vulnerability scanner (SARIF)
         if: ${{ inputs.output-format == 'sarif' }}
         uses: aquasecurity/trivy-action@0.17.0
@@ -61,29 +66,14 @@ jobs:
           severity: ${{ inputs.severity }}
           exit-code: 0
 
-      - name: Run Trivy vulnerability scanner (JSON + dependency-tree)
-        if: ${{ inputs.output-format == 'json' }}
+      - name: Run Trivy vulnerability scanner (JSON or TABLE)
+        if: ${{ inputs.output-format != 'sarif' }}
         run: |
-          trivy image --format json \
-            --output trivy-results.json \
+          trivy image ${{ inputs.image-name }}:${{ inputs.image-tag }} \
+            --format ${{ inputs.output-format }} \
+            --output trivy-results.${{ inputs.output-format }} \
             --severity ${{ inputs.severity }} \
-            --dependency-tree \
-            ${{ inputs.image-name }}:${{ inputs.image-tag }}
-
-      - name: Run Trivy vulnerability scanner (TABLE + dependency-tree)
-        if: ${{ inputs.output-format == 'table' }}
-        run: |
-          trivy image --format table \
-            --output trivy-results.txt \
-            --severity ${{ inputs.severity }} \
-            --dependency-tree \
-            ${{ inputs.image-name }}:${{ inputs.image-tag }}
-
-      - name: Generate SBOM (CycloneDX)
-        run: |
-          trivy image --format cyclonedx \
-            --output sbom.cdx.json \
-            ${{ inputs.image-name }}:${{ inputs.image-tag }}
+            --dependency-tree
 
       - name: Upload Trivy SARIF results to GitHub Security tab
         if: ${{ inputs.output-format == 'sarif' }}
@@ -91,22 +81,21 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      - name: Upload Trivy JSON artifact
-        if: ${{ inputs.output-format == 'json' }}
+      - name: Upload Trivy JSON/TABLE artifact
+        if: ${{ inputs.output-format != 'sarif' }}
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report-json
-          path: trivy-results.json
+          name: trivy-report-${{ inputs.output-format }}
+          path: trivy-results.${{ inputs.output-format }}
 
-      - name: Upload Trivy TABLE artifact
-        if: ${{ inputs.output-format == 'table' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report-table
-          path: trivy-results.txt
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          trivy image ${{ inputs.image-name }}:${{ inputs.image-tag }} \
+            --format cyclonedx \
+            --output sbom.cyclonedx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
-          path: sbom.cdx.json
+          path: sbom.cyclonedx.json
