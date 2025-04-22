@@ -17,6 +17,19 @@ jobs:
       language: 'python'
 ```
 
+## ✅ Lenguajes soportados por CodeQL
+
+- **JavaScript / TypeScript**
+- **Python**
+- **Java / Kotlin**
+- **C / C++**
+- **C# (.NET)**
+- **Go**
+- **Ruby**
+- **Swift**
+- **CodeQL** (como lenguaje en sí para escribir consultas)
+
+
 ### 🐳 Trivy Docker container Scan examples
 ### Cómo usarlo
 ```yaml
