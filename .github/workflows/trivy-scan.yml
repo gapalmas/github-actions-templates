@@ -20,6 +20,11 @@ on:
         default: "sarif"
         required: false
         type: string
+    secrets:
+      DOCKER_HUB_USERNAME:
+        required: true
+      DOCKER_HUB_TOKEN:
+        required: true
 permissions:
   contents: read
   security-events: write
