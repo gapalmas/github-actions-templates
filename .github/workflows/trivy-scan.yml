@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload Trivy results as artifact
         if: ${{ inputs.output-format != 'sarif' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: trivy-results
           path: trivy-results.${{ inputs.output-format }}
